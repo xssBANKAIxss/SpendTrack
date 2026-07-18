@@ -42,3 +42,10 @@ $routes->get('reports/index', 'ReportController::index');
 
 // Dashboard - displays the main dashboard page
 $routes->get('index', 'DashboardController::index');
+
+// Show the OTP verification page
+$routes->get('verify', 'AuthController::verifyShow');
+// Process the submitted OTP code (matches this view's form action)
+$routes->post('otp/verify', 'AuthController::verifyOtp');
+// Resend a new code (matches this view's resend button)
+$routes->post('otp/resend', 'AuthController::resendOtp');

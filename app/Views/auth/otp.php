@@ -55,7 +55,7 @@
                     </div>
                   <?php endif; ?>
 
-                  <form class="user" method="post" action="<?= base_url('otp/verify') ?>">
+                  <form class="user" method="post" action="/otp/verify">
 
                     <?= csrf_field() ?>
 
@@ -69,6 +69,7 @@
                         inputmode="numeric"
                         pattern="[0-9]{6}"
                         autocomplete="one-time-code"
+                        oninput="this.value=this.value.replace(/[^0-9]/g,'')"
                         autofocus
                         required>
                     </div>
@@ -84,7 +85,7 @@
                   </form>
 
                   <div class="text-center">
-                    <form method="post" action="<?= base_url('otp/resend') ?>">
+                    <form method="post" action="/otp/resend">
                       <?= csrf_field() ?>
                       <button type="submit" class="btn btn-link small p-0">
                         Didn't get a code? Resend

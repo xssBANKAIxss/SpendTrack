@@ -55,7 +55,11 @@
         <?= session()->getFlashdata('success') ?>
       </div>
       <div class="modal-footer">
-        <a class="btn btn-primary" href="<?= base_url('login') ?>">Go to Login</a>
+        <?php if (session()->get('isLoggedIn')): ?>
+          <button class="btn btn-primary" type="button" data-dismiss="modal">OK</button>
+        <?php else: ?>
+          <a class="btn btn-primary" href="<?= base_url('login') ?>">Go to Login</a>
+        <?php endif; ?>
       </div>
     </div>
   </div>
