@@ -13,6 +13,7 @@
   <!-- SB Admin CSS -->
   <link href="<?= base_url('assets/vendor/fontawesome-free/css/all.min.css') ?>" rel="stylesheet">
   <link href="<?= base_url('assets/css/sb-admin-2.min.css') ?>" rel="stylesheet">
+  <?= $this->renderSection('styles') ?>
 </head>
 
 <body id="page-top">

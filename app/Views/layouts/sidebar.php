@@ -15,7 +15,7 @@
    <!-- Nav Item - Dashboard -->
    <li class="nav-item active">
      <a class="nav-link" href="<?= base_url('index') ?>">
-       <i class="fas fa-fw fa-tachometer-alt"></i>
+       <i class="fas fa-fw fa-chart-bar"></i>
        <span>Dashboard</span></a>
    </li>
 
@@ -48,5 +48,32 @@
        <span>Reports</span></a>
    </li>
 
+   <!-- Divider -->
+   <?php if (session()->get('role') === 'admin'): ?>
+
+     <hr class="sidebar-divider">
+
+     <li class="nav-item">
+       <a class="nav-link" href="<?= base_url('admin/dashboard') ?>">
+         <i class="fas fa-fw fa-user-shield"></i>
+         <span>Admin Dashboard</span>
+       </a>
+     </li>
+
+     <li class="nav-item">
+       <a class="nav-link" href="<?= base_url('admin/users') ?>">
+         <i class="fas fa-fw fa-users"></i>
+         <span>Manage Users</span>
+       </a>
+     </li>
+
+     <li class="nav-item">
+       <a class="nav-link" href="<?= base_url('admin/expenses') ?>">
+         <i class="fas fa-fw fa-list"></i>
+         <span>All Expenses</span>
+       </a>
+     </li>
+
+   <?php endif; ?>
  </ul>
  <!-- End of Sidebar -->

@@ -66,6 +66,7 @@ class AuthController extends BaseController
       'email'       => $this->request->getPost('email'),
       'password'    => password_hash($this->request->getPost('password'), PASSWORD_DEFAULT),
       'is_verified' => 0,
+      'role'        => 'user',
     ]);
 
     $this->sendOtpToUser($userId, $this->request->getPost('email'));
@@ -124,9 +125,11 @@ class AuthController extends BaseController
 
     session()->remove('pending_user_id');
     session()->regenerate();
+
     session()->set('user_id', $user['id']);
     session()->set('isLoggedIn', true);
     session()->set('name', $user['name']);
+    session()->set('role', $user['role']);
 
     return redirect()->to(base_url('index'))->with('success', 'Email verified! Welcome.');
   }

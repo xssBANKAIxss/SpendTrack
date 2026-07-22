@@ -32,12 +32,18 @@ class ExpenseController extends BaseController
   {
     $model = new ExpenseModel();
     $userId = session()->get('user_id');
+    $isAdmin = session()->get('role') === 'admin';
 
-    // Get all expenses for the table
-    $data['expenses'] = $model
-      ->where('user_id', $userId)
-      ->orderBy('expense_date', 'DESC')
-      ->findAll();
+    if ($isAdmin) {
+      $data['expenses'] = $model
+        ->orderBy('expense_date', 'DESC')
+        ->findAll();
+    } else {
+      $data['expenses'] = $model
+        ->where('user_id', $userId)
+        ->orderBy('expense_date', 'DESC')
+        ->findAll();
+    }
 
     // Latest expense amount
     $latest = $model

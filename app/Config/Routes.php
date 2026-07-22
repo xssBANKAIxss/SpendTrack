@@ -49,3 +49,12 @@ $routes->get('verify', 'AuthController::verifyShow');
 $routes->post('otp/verify', 'AuthController::verifyOtp');
 // Resend a new code (matches this view's resend button)
 $routes->post('otp/resend', 'AuthController::resendOtp');
+
+$routes->get('admin/dashboard', 'AdminController::dashboard');
+
+$routes->get('admin/users', 'AdminController::users');
+
+$routes->get('admin/expenses', 'AdminController::expenses');
+
+$routes->post('admin/make-admin/(:num)', 'AdminController::makeAdmin/$1');
+$routes->post('admin/make-user/(:num)', 'AdminController::makeUser/$1');

@@ -14,6 +14,7 @@ class UserModel extends Model
     'email',
     'password',
     'is_verified',
+    'role',
   ];
 
   protected $useTimestamps = true;
