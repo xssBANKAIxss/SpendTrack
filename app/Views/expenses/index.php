@@ -140,4 +140,12 @@
 </div>
 <!-- End Page Content -->
 
+<script>
+  window.addEventListener('storage', function(e) {
+    if (e.key === 'expenseUpdated') {
+      location.reload();
+    }
+  });
+</script>
+
 <?= $this->endSection() ?>

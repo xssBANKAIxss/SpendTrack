@@ -13,7 +13,9 @@ class UserModel extends Model
     'name',
     'email',
     'password',
+    'pin',
     'is_verified',
+    'otp_verified_at',
     'role',
   ];
 

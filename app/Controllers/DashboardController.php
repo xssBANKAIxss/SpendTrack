@@ -61,6 +61,14 @@ class DashboardController extends BaseController
       ->groupBy('category')
       ->findAll();
 
+    // Recent Expenses (last 5)
+    $recentExpenses = (new ExpenseModel())
+      ->where('user_id', $userId)
+      ->orderBy('expense_date', 'DESC')
+      ->orderBy('id', 'DESC')
+      ->limit(5)
+      ->findAll();
+
     // ---- PASS TO VIEW ----
 
     $data = [
@@ -70,6 +78,7 @@ class DashboardController extends BaseController
       'totalRecords'     => $totalRecords,
       'monthlyData'      => array_values($monthlyData),
       'categoryExpenses' => $categoryExpenses,
+      'recentExpenses'   => $recentExpenses,
     ];
 
     return view('dashboard/index', $data);

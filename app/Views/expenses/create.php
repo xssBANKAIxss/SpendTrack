@@ -10,14 +10,15 @@
       </div>
 
       <form class="user" method="post" action="<?= base_url('expenses/store') ?>">
-
+        <?= csrf_field() ?>
         <div class="form-group">
           <label for="title">Title</label>
           <input type="text"
             name="title"
             class="form-control"
             id="title"
-            placeholder="e.g. Grocery Shopping">
+            placeholder="e.g. Grocery Shopping"
+            required>
         </div>
 
         <div class="form-group row">
@@ -29,7 +30,8 @@
               name="amount"
               class="form-control"
               id="amount"
-              placeholder="0.00">
+              placeholder="0.00"
+              required>
           </div>
 
           <div class="col-sm-6">
@@ -40,7 +42,8 @@
               id="category"
               list="categoryOptions"
               placeholder="Select or type a category"
-              autocomplete="off">
+              autocomplete="off"
+              required>
             <datalist id="categoryOptions">
               <option value="Food">
               <option value="Transportation">
@@ -56,7 +59,8 @@
           <input type="date"
             name="expense_date"
             class="form-control"
-            id="expense_date">
+            id="expense_date"
+            required>
         </div>
 
         <div class="form-group">
@@ -78,5 +82,11 @@
     </div>
   </div>
 </div>
+
+<?php if (session()->getFlashdata('success')): ?>
+  <script>
+    localStorage.setItem('expenseUpdated', Date.now());
+  </script>
+<?php endif; ?>
 
 <?= $this->endSection() ?>

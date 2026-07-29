@@ -6,7 +6,7 @@
 
 <?= $this->section('content') ?>
 <?php $currentUserId = (int) session()->get('user_id'); ?>
-
+<?php $isSuperAdmin = session()->get('email') === env('app.superAdminEmail'); ?>
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Manage Users</h1>
   <span class="badge badge-primary px-3 py-2"><?= count($users) ?> total</span>
@@ -57,22 +57,26 @@
               <td class="text-center">
                 <?php if ((int) $user['id'] === $currentUserId): ?>
                   <span class="text-muted small"><i class="fas fa-user-check mr-1"></i>Current account</span>
-                <?php elseif ($isAdmin): ?>
-                  <button type="button" class="btn btn-sm btn-outline-warning role-action"
-                    data-toggle="modal" data-target="#roleChangeModal"
-                    data-action="<?= esc(base_url('admin/make-user/' . $user['id']), 'attr') ?>"
-                    data-user-name="<?= esc($user['name'], 'attr') ?>"
-                    data-role="User" data-verb="Demote">
-                    <i class="fas fa-user-minus mr-1"></i>Make User
-                  </button>
+                <?php elseif ($isSuperAdmin): ?>
+                  <?php if ($isAdmin): ?>
+                    <button type="button" class="btn btn-sm btn-outline-warning role-action"
+                      data-toggle="modal" data-target="#roleChangeModal"
+                      data-action="<?= esc(base_url('admin/make-user/' . $user['id']), 'attr') ?>"
+                      data-user-name="<?= esc($user['name'], 'attr') ?>"
+                      data-role="User" data-verb="Demote">
+                      <i class="fas fa-user-minus mr-1"></i>Make User
+                    </button>
+                  <?php else: ?>
+                    <button type="button" class="btn btn-sm btn-success role-action"
+                      data-toggle="modal" data-target="#roleChangeModal"
+                      data-action="<?= esc(base_url('admin/make-admin/' . $user['id']), 'attr') ?>"
+                      data-user-name="<?= esc($user['name'], 'attr') ?>"
+                      data-role="Admin" data-verb="Promote">
+                      <i class="fas fa-user-shield mr-1"></i>Make Admin
+                    </button>
+                  <?php endif; ?>
                 <?php else: ?>
-                  <button type="button" class="btn btn-sm btn-success role-action"
-                    data-toggle="modal" data-target="#roleChangeModal"
-                    data-action="<?= esc(base_url('admin/make-admin/' . $user['id']), 'attr') ?>"
-                    data-user-name="<?= esc($user['name'], 'attr') ?>"
-                    data-role="Admin" data-verb="Promote">
-                    <i class="fas fa-user-shield mr-1"></i>Make Admin
-                  </button>
+                  <span class="text-muted small">No action available</span>
                 <?php endif; ?>
               </td>
             </tr>
@@ -107,13 +111,16 @@
 <script src="<?= base_url('assets/vendor/datatables/jquery.dataTables.min.js') ?>"></script>
 <script src="<?= base_url('assets/vendor/datatables/dataTables.bootstrap4.min.js') ?>"></script>
 <script>
-  $(function () {
+  $(function() {
     $('#dataTable').DataTable({
       pageLength: 10,
-      columnDefs: [{ orderable: false, targets: 4 }]
+      columnDefs: [{
+        orderable: false,
+        targets: 4
+      }]
     });
 
-    $('#roleChangeModal').on('show.bs.modal', function (event) {
+    $('#roleChangeModal').on('show.bs.modal', function(event) {
       const button = $(event.relatedTarget);
       const verb = button.data('verb');
       const userName = button.data('user-name');

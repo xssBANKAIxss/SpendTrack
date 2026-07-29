@@ -1,0 +1,20 @@
+# Ignore environment file (secrets/config)
+.env
+
+# Ignore CodeIgniter's writable folder contents
+writable/cache/*
+writable/debugbar/*
+writable/logs/*
+writable/session/*
+writable/uploads/*
+
+# But keep the folders themselves tracked
+!writable/cache/index.html
+!writable/debugbar/index.html
+!writable/logs/index.html
+!writable/session/index.html
+!writable/uploads/index.html
+
+# Ignore dependencies
+vendor/
+node_modules/

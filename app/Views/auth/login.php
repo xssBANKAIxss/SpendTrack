@@ -112,6 +112,15 @@
 
   <?= $this->include('layouts/modal') ?>
 
+  <script>
+    var params = new URLSearchParams(window.location.search);
+    var notice = params.get('notice');
+    if (notice) {
+      $('#errorModal .modal-body').text(notice);
+      $('#errorModal').modal('show');
+    }
+  </script>
+
 </body>
 
 </html>

@@ -28,7 +28,8 @@
             class="form-control"
             id="title"
             placeholder="e.g. Grocery Shopping"
-            value="<?= esc($expense['title']) ?>">
+            value="<?= esc($expense['title']) ?>"
+            required>
         </div>
 
         <div class="form-group row">
@@ -41,7 +42,8 @@
               class="form-control"
               id="amount"
               placeholder="0.00"
-              value="<?= esc($expense['amount']) ?>">
+              value="<?= esc($expense['amount']) ?>"
+              required>
           </div>
 
           <div class="col-sm-6">
@@ -53,7 +55,8 @@
               list="categoryOptions"
               placeholder="Select or type a category"
               autocomplete="off"
-              value="<?= esc($expense['category']) ?>">
+              value="<?= esc($expense['category']) ?>"
+              required>
             <datalist id="categoryOptions">
               <option value="Food">
               <option value="Transportation">
@@ -70,7 +73,8 @@
             name="expense_date"
             class="form-control"
             id="expense_date"
-            value="<?= esc($expense['expense_date']) ?>">
+            value="<?= esc($expense['expense_date']) ?>"
+            required>
         </div>
 
         <div class="form-group">

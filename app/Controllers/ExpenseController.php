@@ -14,6 +14,18 @@ class ExpenseController extends BaseController
 
   public function store()
   {
+    $rules = [
+      'title'        => 'required',
+      'amount'       => 'required|numeric',
+      'category'     => 'required',
+      'expense_date' => 'required|valid_date',
+    ];
+
+    if (!$this->validate($rules)) {
+      return redirect()->to(base_url('expenses/create'))
+        ->with('error', implode(' ', $this->validator->getErrors()));
+    }
+
     $model = new ExpenseModel();
 
     $model->insert([
@@ -25,25 +37,18 @@ class ExpenseController extends BaseController
       'notes'        => $this->request->getPost('notes'),
     ]);
 
-    return redirect()->to(base_url('expenses/index'));
+    return redirect()->to(base_url('expenses/create'))
+      ->with('success', 'Expense added successfully.');
   }
 
   public function index()
   {
     $model = new ExpenseModel();
     $userId = session()->get('user_id');
-    $isAdmin = session()->get('role') === 'admin';
-
-    if ($isAdmin) {
-      $data['expenses'] = $model
-        ->orderBy('expense_date', 'DESC')
-        ->findAll();
-    } else {
-      $data['expenses'] = $model
-        ->where('user_id', $userId)
-        ->orderBy('expense_date', 'DESC')
-        ->findAll();
-    }
+    $data['expenses'] = $model
+      ->where('user_id', $userId)
+      ->orderBy('expense_date', 'DESC')
+      ->findAll();
 
     // Latest expense amount
     $latest = $model
@@ -80,15 +85,45 @@ class ExpenseController extends BaseController
   {
     $model = new ExpenseModel();
 
-    $data['expense'] = $model->find($id); // ✅ fetch the expense by id
+    $expense = $model
+      ->where('id', $id)
+      ->where('user_id', session()->get('user_id'))
+      ->first();
 
-    return view('expenses/edit', $data); // ✅ pass data to view
+    if (!$expense) {
+      return redirect()->to(base_url('expenses/index'))
+        ->with('error', 'Expense not found or you do not have access.');
+    }
+
+    return view('expenses/edit', ['expense' => $expense]);
   }
 
   // ✅ NEW: update the expense
   public function update($id)
   {
     $model = new ExpenseModel();
+
+    $expense = $model
+      ->where('id', $id)
+      ->where('user_id', session()->get('user_id'))
+      ->first();
+
+    if (!$expense) {
+      return redirect()->to(base_url('expenses/index'))
+        ->with('error', 'Expense not found or you do not have access.');
+    }
+
+    $rules = [
+      'title'        => 'required',
+      'amount'       => 'required|numeric',
+      'category'     => 'required',
+      'expense_date' => 'required|valid_date',
+    ];
+
+    if (!$this->validate($rules)) {
+      return redirect()->to(base_url('expenses/edit/' . $id))
+        ->with('error', implode(' ', $this->validator->getErrors()));
+    }
 
     $model->update($id, [
       'title'        => $this->request->getPost('title'),
@@ -98,7 +133,8 @@ class ExpenseController extends BaseController
       'notes'        => $this->request->getPost('notes'),
     ]);
 
-    return redirect()->to(base_url('expenses/index'));
+    return redirect()->to(base_url('expenses/index'))
+      ->with('success', 'Expense updated.');
   }
 
   // delete the expense
@@ -106,8 +142,19 @@ class ExpenseController extends BaseController
   {
     $model = new ExpenseModel();
 
+    $expense = $model
+      ->where('id', $id)
+      ->where('user_id', session()->get('user_id'))
+      ->first();
+
+    if (!$expense) {
+      return redirect()->to(base_url('expenses/index'))
+        ->with('error', 'Expense not found or you do not have access.');
+    }
+
     $model->delete($id);
 
-    return redirect()->to(base_url('expenses/index'));
+    return redirect()->to(base_url('expenses/index'))
+      ->with('success', 'Expense deleted.');
   }
 }

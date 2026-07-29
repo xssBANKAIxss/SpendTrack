@@ -14,9 +14,21 @@
 <!-- Chart.js -->
 <script src="<?= base_url('assets/vendor/chart.js/Chart.min.js') ?>"></script>
 
-<!-- Chart Demo Scripts -->
-<script src="<?= base_url('assets/js/demo/chart-area-demo.js') ?>"></script>
-<script src="<?= base_url('assets/js/demo/chart-pie-demo.js') ?>"></script>
+<?php if (session()->get('user_id')): ?>
+  <script>
+    setInterval(function() {
+      fetch('<?= base_url('check-session') ?>')
+        .then(function(res) {
+          return res.json();
+        })
+        .then(function(data) {
+          if (!data.valid) {
+            window.location.href = '<?= base_url('login') ?>?notice=' + encodeURIComponent(data.message);
+          }
+        });
+    }, 5000);
+  </script>
+<?php endif; ?>
 
 <?= $this->renderSection('scripts') ?>
 

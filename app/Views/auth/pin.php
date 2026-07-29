@@ -1,3 +1,16 @@
+<?php
+$mode = $mode ?? 'verify';
+$isSetup = $mode === 'setup';
+$isReset = $mode === 'reset';
+$isPinCreation = $isSetup || $isReset;
+$title = $isSetup ? 'Create Your PIN' : ($isReset ? 'Reset Your PIN' : 'Enter Your PIN');
+$description = $isSetup
+  ? 'Create a 4-digit PIN to protect your account.'
+  : ($isReset
+    ? 'Create a new 4-digit PIN for your account.'
+    : 'Welcome back' . (isset($name) ? ', ' . esc($name) : '') . '. Enter your 4-digit PIN to continue.');
+$formAction = $isSetup ? 'pin/setup' : ($isReset ? 'pin/reset' : 'pin/verify');
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -9,7 +22,7 @@
   <meta name="description" content="">
   <meta name="author" content="">
 
-  <title>SpendTrack - Enter PIN</title>
+  <title>SpendTrack - <?= esc($title) ?></title>
 
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,800,900" rel="stylesheet">
@@ -35,10 +48,9 @@
               <div class="col-lg-6">
                 <div class="p-5">
                   <div class="text-center">
-                    <h1 class="h4 text-gray-900 mb-2"><b>Enter Your PIN</b></h1>
+                    <h1 class="h4 text-gray-900 mb-2"><b><?= esc($title) ?></b></h1>
                     <p class="mb-4">
-                      Welcome back<?= isset($name) ? ', ' . esc($name) : '' ?>.
-                      Enter your PIN to continue.
+                      <?= $description ?>
                     </p>
                   </div>
 
@@ -48,7 +60,7 @@
                     </div>
                   <?php endif; ?>
 
-                  <form class="user" method="post" action="<?= base_url('pin/verify') ?>">
+                  <form class="user" method="post" action="<?= base_url($formAction) ?>">
 
                     <?= csrf_field() ?>
 
@@ -57,28 +69,47 @@
                         name="pin"
                         class="form-control form-control-user text-center"
                         id="pinCode"
-                        placeholder="Enter your PIN"
-                        maxlength="6"
+                        placeholder="<?= $isPinCreation ? 'Create 4-digit PIN' : 'Enter 4-digit PIN' ?>"
+                        maxlength="4"
                         inputmode="numeric"
-                        pattern="[0-9]*"
-                        autocomplete="off"
+                        pattern="[0-9]{4}"
+                        autocomplete="<?= $isPinCreation ? 'new-password' : 'off' ?>"
+                        oninput="this.value=this.value.replace(/[^0-9]/g,'')"
                         autofocus
                         required>
                     </div>
 
+                    <?php if ($isPinCreation): ?>
+                      <div class="form-group">
+                        <input type="password"
+                          name="pin_confirmation"
+                          class="form-control form-control-user text-center"
+                          id="pinConfirmation"
+                          placeholder="Confirm 4-digit PIN"
+                          maxlength="4"
+                          inputmode="numeric"
+                          pattern="[0-9]{4}"
+                          autocomplete="new-password"
+                          oninput="this.value=this.value.replace(/[^0-9]/g,'')"
+                          required>
+                      </div>
+                    <?php endif; ?>
+
                     <hr>
 
                     <button type="submit" class="btn btn-primary btn-user btn-block">
-                      Continue
+                      <?= $isPinCreation ? 'Save PIN and continue' : 'Continue' ?>
                     </button>
 
                     <hr>
 
                   </form>
 
-                  <div class="text-center">
-                    <a class="small" href="<?= base_url('forgot-password') ?>">Forgot PIN?</a>
-                  </div>
+                  <?php if (!$isPinCreation): ?>
+                    <div class="text-center">
+                      <a class="small" href="<?= base_url('forgot-pin') ?>">Forgot PIN?</a>
+                    </div>
+                  <?php endif; ?>
                   <div class="text-center mt-2">
                     <a class="small" href="<?= base_url('logout') ?>">Not you? Log out</a>
                   </div>

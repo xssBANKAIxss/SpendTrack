@@ -69,6 +69,62 @@
   </div>
 </div>
 
+<div class="row">
+  <!-- Quick Actions -->
+  <div class="col-lg-4 mb-4">
+    <div class="card shadow h-100">
+      <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
+      </div>
+      <div class="card-body d-flex flex-column">
+        <a href="<?= base_url('admin/users') ?>" class="btn btn-outline-primary mb-2">
+          <i class="fas fa-users mr-1"></i> Manage Users
+        </a>
+        <a href="<?= base_url('admin/expenses') ?>" class="btn btn-outline-primary">
+          <i class="fas fa-receipt mr-1"></i> View All Expenses
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Activity -->
+  <div class="col-lg-8 mb-4">
+    <div class="card shadow h-100">
+      <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Recent Activity</h6>
+      </div>
+      <div class="card-body">
+        <?php if (empty($recentActivity)): ?>
+          <p class="text-center text-muted mb-0">No expenses recorded yet.</p>
+        <?php else: ?>
+          <div class="table-responsive">
+            <table class="table table-bordered" width="100%" cellspacing="0">
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Title</th>
+                  <th>Amount</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php foreach ($recentActivity as $item): ?>
+                  <tr>
+                    <td><?= esc($item['user_name']) ?></td>
+                    <td><?= esc($item['title']) ?></td>
+                    <td>₱<?= number_format($item['amount'], 2) ?></td>
+                    <td><?= esc($item['expense_date']) ?></td>
+                  </tr>
+                <?php endforeach; ?>
+              </tbody>
+            </table>
+          </div>
+        <?php endif; ?>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="card shadow mb-4">
   <div class="card-body d-flex align-items-center">
     <div class="btn btn-success btn-circle mr-3"><i class="fas fa-user-check"></i></div>

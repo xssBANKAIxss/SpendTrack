@@ -4,12 +4,6 @@ namespace App\Controllers;
 
 class AdminController extends BaseController
 {
-  public function __construct()
-  {
-    if (session()->get('role') !== 'admin') {
-      exit('Access Denied');
-    }
-  }
   public function dashboard()
   {
     $userModel = new \App\Models\UserModel();
@@ -27,6 +21,13 @@ class AdminController extends BaseController
       ->select('category')
       ->groupBy('category')
       ->countAllResults();
+
+    $data['recentActivity'] = $expenseModel
+      ->select('expenses.*, users.name as user_name')
+      ->join('users', 'users.id = expenses.user_id')
+      ->orderBy('expenses.created_at', 'DESC')
+      ->limit(5)
+      ->find();
 
     return view('admin/dashboard', $data);
   }
@@ -62,12 +63,19 @@ class AdminController extends BaseController
 
   private function changeRole($id, string $role, string $message)
   {
+    $userModel = new \App\Models\UserModel();
+    $actingUser = $userModel->find(session()->get('user_id'));
+
+    if (!$actingUser || $actingUser['email'] !== env('app.superAdminEmail')) {
+      return redirect()->to('/admin/users')
+        ->with('error', 'Only the designated super-admin can change user roles.');
+    }
+
     if ((int) $id === (int) session()->get('user_id')) {
       return redirect()->to('/admin/users')
         ->with('error', 'You cannot change the role of your own account.');
     }
 
-    $userModel = new \App\Models\UserModel();
     $user = $userModel->find($id);
 
     if (!$user) {

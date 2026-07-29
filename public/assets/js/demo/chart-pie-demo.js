@@ -18,8 +18,30 @@ var myPieChart = new Chart(ctx, {
             return parseFloat(row.total);
           },
         ),
-        backgroundColor: ["#4e73df", "#1cc88a", "#36b9cc"],
-        hoverBackgroundColor: ["#2e59d9", "#17a673", "#2c9faf"],
+        backgroundColor: (window.dashboardData?.categoryExpenses ?? []).map(
+          function (row, i) {
+            var palette = [
+              "#4e73df",
+              "#1cc88a",
+              "#36b9cc",
+              "#f6c23e",
+              "#e74a3b",
+            ];
+            return palette[i % palette.length];
+          },
+        ),
+        hoverBackgroundColor: (
+          window.dashboardData?.categoryExpenses ?? []
+        ).map(function (row, i) {
+          var hoverPalette = [
+            "#2e59d9",
+            "#17a673",
+            "#2c9faf",
+            "#dda20a",
+            "#c0392b",
+          ];
+          return hoverPalette[i % hoverPalette.length];
+        }),
         hoverBorderColor: "rgba(234, 236, 244, 1)",
       },
     ],
