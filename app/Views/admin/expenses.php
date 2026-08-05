@@ -162,28 +162,30 @@ $totalCategories = count($expenseCategories);
 
 </div>
 
+<!-- Expense Table (now includes the filter controls) -->
 <div class="card shadow mb-4">
 
-  <div class="card-header py-3">
+  <div class="card-header py-3 d-flex justify-content-between align-items-center">
     <h6 class="m-0 font-weight-bold text-primary">
-      Filter Expenses
+      Expense Records
     </h6>
+
+    <span class="badge badge-primary px-3 py-2" id="recordCountBadge">
+      <?= count($expenses) ?> Records
+    </span>
   </div>
 
   <div class="card-body">
 
-    <div class="row">
+    <!-- Filter Controls -->
+    <div class="row mb-4">
+      <div class="col-12 d-flex justify-content-center flex-wrap" style="gap: 10px;">
 
-      <div class="col-md-3">
-        <input type="text" id="searchUser" class="form-control" placeholder="Search user...">
-      </div>
+        <input type="text" id="searchUser" class="form-control" style="flex: 1; min-width: 150px;" placeholder="Search user...">
 
-      <div class="col-md-3">
-        <input type="text" id="searchTitle" class="form-control" placeholder="Search title...">
-      </div>
+        <input type="text" id="searchTitle" class="form-control" style="flex: 1; min-width: 150px;" placeholder="Search title...">
 
-      <div class="col-md-3">
-        <select id="categoryFilter" class="form-control">
+        <select id="categoryFilter" class="form-control" style="flex: 1; min-width: 150px;">
           <option value="">All Categories</option>
 
           <?php foreach ($categories as $category): ?>
@@ -195,37 +197,9 @@ $totalCategories = count($expenseCategories);
           <?php endforeach; ?>
 
         </select>
-      </div>
-
-      <div class="col-md-3">
-
-        <button class="btn btn-primary btn-block">
-          <i class="fas fa-search"></i>
-          Search
-        </button>
 
       </div>
-
     </div>
-
-  </div>
-
-</div>
-
-<!-- Expense Table -->
-<div class="card shadow mb-4">
-
-  <div class="card-header py-3 d-flex justify-content-between align-items-center">
-    <h6 class="m-0 font-weight-bold text-primary">
-      Expense Records
-    </h6>
-
-    <span class="badge badge-primary px-3 py-2">
-      <?= count($expenses) ?> Records
-    </span>
-  </div>
-
-  <div class="card-body">
 
     <?php if (empty($expenses)): ?>
 
@@ -252,11 +226,15 @@ $totalCategories = count($expenseCategories);
 
           </thead>
 
-          <tbody>
+          <tbody id="expenseTableBody">
 
             <?php foreach ($expenses as $expense): ?>
 
-              <tr>
+              <tr
+                class="expense-row"
+                data-user="<?= esc(strtolower($expense['name'])) ?>"
+                data-title="<?= esc(strtolower($expense['title'])) ?>"
+                data-category="<?= esc($expense['category']) ?>">
 
                 <td>
                   <i class="fas fa-user text-primary mr-2"></i>
@@ -291,10 +269,73 @@ $totalCategories = count($expenseCategories);
 
       </div>
 
+      <!-- Shown only when a filter matches nothing -->
+      <div class="text-center py-5 d-none" id="noResultsMessage">
+        <i class="fas fa-search fa-4x text-gray-300 mb-3"></i>
+        <h5 class="text-muted">No matching expenses found.</h5>
+      </div>
+
     <?php endif; ?>
 
   </div>
 
 </div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var searchUserInput = document.getElementById('searchUser');
+    var searchTitleInput = document.getElementById('searchTitle');
+    var categorySelect = document.getElementById('categoryFilter');
+    var rows = document.querySelectorAll('#expenseTableBody .expense-row');
+    var noResultsMessage = document.getElementById('noResultsMessage');
+    var recordCountBadge = document.getElementById('recordCountBadge');
+
+    function filterTable() {
+      // Read current values, lowercase the text ones for a case-insensitive match
+      var userValue = searchUserInput.value.trim().toLowerCase();
+      var titleValue = searchTitleInput.value.trim().toLowerCase();
+      var categoryValue = categorySelect.value;
+
+      var visibleCount = 0;
+
+      rows.forEach(function(row) {
+        var rowUser = row.getAttribute('data-user');
+        var rowTitle = row.getAttribute('data-title');
+        var rowCategory = row.getAttribute('data-category');
+
+        var matchesUser = userValue === '' || rowUser.indexOf(userValue) !== -1;
+        var matchesTitle = titleValue === '' || rowTitle.indexOf(titleValue) !== -1;
+        var matchesCategory = categoryValue === '' || rowCategory === categoryValue;
+
+        if (matchesUser && matchesTitle && matchesCategory) {
+          row.style.display = '';
+          visibleCount++;
+        } else {
+          row.style.display = 'none';
+        }
+      });
+
+      // Update the "X Records" badge
+      if (recordCountBadge) {
+        recordCountBadge.textContent = visibleCount + ' Records';
+      }
+
+      // Show/hide the "no results" message
+      if (noResultsMessage) {
+        if (visibleCount === 0) {
+          noResultsMessage.classList.remove('d-none');
+        } else {
+          noResultsMessage.classList.add('d-none');
+        }
+      }
+    }
+
+    // Filter live as the user types or changes the dropdown
+    if (searchUserInput) searchUserInput.addEventListener('keyup', filterTable);
+    if (searchTitleInput) searchTitleInput.addEventListener('keyup', filterTable);
+    if (categorySelect) categorySelect.addEventListener('change', filterTable);
+
+  });
+</script>
 
 <?= $this->endSection() ?>
