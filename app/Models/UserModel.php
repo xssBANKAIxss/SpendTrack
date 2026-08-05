@@ -17,6 +17,8 @@ class UserModel extends Model
     'is_verified',
     'otp_verified_at',
     'role',
+    'google_id',
+    'avatar_url',
   ];
 
   protected $useTimestamps = true;

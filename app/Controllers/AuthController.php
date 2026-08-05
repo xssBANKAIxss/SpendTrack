@@ -7,7 +7,9 @@ use App\Models\UserModel;
 
 class AuthController extends BaseController
 {
-  private const OTP_RECHECK_SECONDS = 604800; // 7 days
+  private const OTP_RECHECK_SECONDS = 0; // 0 days
+
+  // private const OTP_RECHECK_SECONDS = 604800; // 7 days
 
   public function forgotPassword()
   {
@@ -410,12 +412,179 @@ class AuthController extends BaseController
       return redirect()->to('/forgot-pin')->with('error', 'The code is invalid or expired. Please request a new one.');
     }
 
+    $throttler = service('throttler');
+    $throttleKey = 'resend-otp-' . $userId;
+    if ($throttler->check($throttleKey, 1, MINUTE) === false) {
+      return redirect()->to('/verify')->with('error', 'Please wait a minute before requesting another code.');
+    }
+
     $userModel = new UserModel();
     $user = $userModel->find($userId);
 
     $this->sendOtpToUser($user['id'], $user['email']);
 
     return redirect()->to('/verify')->with('success', 'A new code has been sent to your email.');
+  }
+
+  /**
+   * Google redirects back here with a ?code=... value. We trade that
+   * code for the user's Google profile, then log them in (Step 3.4
+   * handles creating/linking the account — that's next).
+   */
+  public function googleCallback()
+  {
+    $state = $this->request->getGet('state');
+    $code  = $this->request->getGet('code');
+
+    if (!$state || !hash_equals((string) session()->get('google_oauth_state'), (string) $state)) {
+      return redirect()->to('/login')->with('error', 'Google sign-in failed. Please try again.');
+    }
+    session()->remove('google_oauth_state');
+
+    if (!$code) {
+      return redirect()->to('/login')->with('error', 'Google sign-in was cancelled.');
+    }
+
+    $tokenResponse = $this->exchangeGoogleCode($code);
+    if (!$tokenResponse || empty($tokenResponse['access_token'])) {
+      return redirect()->to('/login')->with('error', 'Could not verify your Google account. Please try again.');
+    }
+
+    $googleUser = $this->fetchGoogleUser($tokenResponse['access_token']);
+    if (!$googleUser || empty($googleUser['email']) || empty($googleUser['id'])) {
+      return redirect()->to('/login')->with('error', 'Could not read your Google profile. Please try again.');
+    }
+
+    $user = $this->findOrCreateGoogleUser($googleUser);
+
+    session()->set('pending_user_id', $user['id']);
+
+    if (empty($user['pin'])) {
+      session()->set('pending_auth_stage', 'pin_setup');
+      session()->set('pin_setup_allowed', true);
+
+      return redirect()->to('/pin/setup');
+    }
+
+    session()->set('pending_auth_stage', 'pin');
+
+    return redirect()->to('/pin/verify');
+  }
+
+  private function exchangeGoogleCode(string $code): ?array
+  {
+    $ch = curl_init('https://oauth2.googleapis.com/token');
+    curl_setopt_array($ch, [
+      CURLOPT_POST           => true,
+      CURLOPT_RETURNTRANSFER => true,
+      CURLOPT_TIMEOUT        => 10,
+      CURLOPT_POSTFIELDS     => http_build_query([
+        'code'          => $code,
+        'client_id'     => env('google.clientId'),
+        'client_secret' => env('google.clientSecret'),
+        'redirect_uri'  => env('google.redirectUri'),
+        'grant_type'    => 'authorization_code',
+      ]),
+    ]);
+    $response = curl_exec($ch);
+    $curlError = curl_errno($ch);
+    curl_close($ch);
+
+    if ($curlError || !$response) {
+      return null;
+    }
+
+    $data = json_decode($response, true);
+
+    return is_array($data) ? $data : null;
+  }
+
+  /**
+   * Three cases:
+   *  1. We've seen this google_id before -> log that user in.
+   *  2. No google_id match, but the email already has an account
+   *     (e.g. they originally registered with a password) -> link
+   *     the Google ID to that existing account.
+   *  3. Brand new email -> create a new user.
+   */
+  private function findOrCreateGoogleUser(array $googleUser): array
+  {
+    $userModel = new UserModel();
+
+    $existingByGoogleId = $userModel->where('google_id', $googleUser['id'])->first();
+    if ($existingByGoogleId) {
+      return $existingByGoogleId;
+    }
+
+    $existingByEmail = $userModel->where('email', $googleUser['email'])->first();
+    if ($existingByEmail) {
+      $userModel->update($existingByEmail['id'], [
+        'google_id'       => $googleUser['id'],
+        'avatar_url'      => $googleUser['picture'] ?? null,
+        'is_verified'     => 1,
+        'otp_verified_at' => $existingByEmail['otp_verified_at'] ?? date('Y-m-d H:i:s'),
+      ]);
+
+      return $userModel->find($existingByEmail['id']);
+    }
+
+    $newUserId = $userModel->insert([
+      'name'            => $googleUser['name'] ?? $googleUser['email'],
+      'email'           => $googleUser['email'],
+      'password'        => null,
+      'google_id'       => $googleUser['id'],
+      'avatar_url'      => $googleUser['picture'] ?? null,
+      'is_verified'     => 1,
+      'otp_verified_at' => date('Y-m-d H:i:s'),
+      'role'            => 'user',
+    ]);
+
+    return $userModel->find($newUserId);
+  }
+
+  private function fetchGoogleUser(string $accessToken): ?array
+  {
+    $ch = curl_init('https://www.googleapis.com/oauth2/v2/userinfo');
+    curl_setopt_array($ch, [
+      CURLOPT_RETURNTRANSFER => true,
+      CURLOPT_TIMEOUT        => 10,
+      CURLOPT_HTTPHEADER     => ['Authorization: Bearer ' . $accessToken],
+    ]);
+    $response = curl_exec($ch);
+    $curlError = curl_errno($ch);
+    curl_close($ch);
+
+    if ($curlError || !$response) {
+      return null;
+    }
+
+    $data = json_decode($response, true);
+
+    return is_array($data) ? $data : null;
+  }
+
+  /**
+   * Sends the user to Google's login screen.
+   */
+  public function googleRedirect()
+  {
+    // A random "state" value that we check again in googleCallback().
+    // This stops other sites from tricking a signed-in Google user
+    // into completing a fake login on our behalf (CSRF protection).
+    $state = bin2hex(random_bytes(16));
+    session()->set('google_oauth_state', $state);
+
+    $params = [
+      'client_id'     => env('google.clientId'),
+      'redirect_uri'  => env('google.redirectUri'),
+      'response_type' => 'code',
+      'scope'         => 'openid email profile',
+      'state'         => $state,
+      'access_type'   => 'online',
+      'prompt'        => 'select_account',
+    ];
+
+    return redirect()->to('https://accounts.google.com/o/oauth2/v2/auth?' . http_build_query($params));
   }
 
   public function logout()

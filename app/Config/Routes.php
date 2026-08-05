@@ -17,8 +17,14 @@ $routes->post('login', 'AuthController::loginProcess');
 $routes->get('register', 'AuthController::register');
 // Auth - process the registration form submission
 $routes->post('register', 'AuthController::registerProcess');
+
 // Auth - log the user out and end the session
 $routes->get('logout', 'AuthController::logout');
+// Google OAuth - send the user to Google to sign in
+$routes->get('auth/google', 'AuthController::googleRedirect');
+// Google OAuth - Google sends the user back here after they approve
+$routes->get('auth/google/callback', 'AuthController::googleCallback');
+
 // Auth - test route for checking controller
 $routes->get('test', 'AuthController::index');
 // Auth - show the forgot password page

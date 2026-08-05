@@ -79,6 +79,12 @@
 
                   </form>
 
+                  <a href="<?= base_url('auth/google') ?>" class="btn btn-google btn-user btn-block" style="background-color:#ea4335; color:#fff;">
+                    <i class="fab fa-google fa-fw"></i> Sign in with Google
+                  </a>
+
+                  <hr>
+
                   <div class="text-center">
                     <a class="small" href="forgot-password">Forgot Password?</a>
                   </div>
