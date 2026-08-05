@@ -7,7 +7,7 @@ use App\Models\UserModel;
 
 class AuthController extends BaseController
 {
-  private const OTP_RECHECK_SECONDS = 0; // 0 days
+  private const OTP_RECHECK_SECONDS = 0; // 7 days
 
   // private const OTP_RECHECK_SECONDS = 604800; // 7 days
 
