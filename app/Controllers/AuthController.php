@@ -7,7 +7,7 @@ use App\Models\UserModel;
 
 class AuthController extends BaseController
 {
-  private const OTP_RECHECK_SECONDS = 0; // 7 days
+  private const OTP_RECHECK_SECONDS = 604800; // 7 days
 
   // private const OTP_RECHECK_SECONDS = 604800; // 7 days
 
@@ -19,6 +19,35 @@ class AuthController extends BaseController
   public function forgotPin()
   {
     return view('auth/forgot_pin');
+  }
+  public function forgotPasswordProcess()
+  {
+    if (! $this->validate(['email' => 'required|valid_email'])) {
+      return redirect()->back()->withInput()
+        ->with('error', 'Please enter a valid email address.');
+    }
+
+    $email = trim((string) $this->request->getPost('email'));
+
+    $userModel = new UserModel();
+    $user = $userModel->where('email', $email)->first();
+
+    if ($user) {
+      if (!$this->sendOtpToUser($user['id'], $user['email'])) {
+        return redirect()->back()->withInput()
+          ->with('error', 'We could not send the reset code. Check your email configuration and try again.');
+      }
+
+      session()->set('pending_user_id', $user['id']);
+      session()->set('pending_auth_stage', 'password_reset_otp');
+
+      return redirect()->to('/verify')
+        ->with('success', 'We sent a 6-digit code to your email.');
+    }
+
+    // Same kind of message even if the email isn't registered
+    return redirect()->back()
+      ->with('success', 'If that email has an account, we sent a code.');
   }
 
   public function forgotPinProcess()
@@ -96,26 +125,79 @@ class AuthController extends BaseController
 
   public function registerProcess()
   {
+    // Strict account details: names are letters only with single internal spaces/hyphens/apostrophes,
+    // emails must be standard address format, and passwords must meet the required complexity rules.
+    $nameRegex = '/^(?!.*(?:[ \'\-]{2,}))[\p{L}]+(?:[ \'\-][\p{L}]+)*$/u';
+    $emailRegex = '/^[^\s@]+@[^\s@]+\.[^\s@]+$/';
+    $passwordRegex = '/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])\S{8,64}$/';
+
     $rules = [
-      'first_name' => 'required|min_length[2]',
-      'last_name'  => 'required|min_length[2]',
-      'email'      => 'required|valid_email|is_unique[users.email]',
-      'password'   => 'required|min_length[8]',
+      'first_name' => [
+        'label'  => 'First name',
+        'rules'  => ['trim', 'required', 'min_length[2]', 'max_length[50]', "regex_match[$nameRegex]"],
+        'errors' => ['regex_match' => 'First name may only contain letters, spaces, hyphens and apostrophes, with no duplicate separators.'],
+      ],
+      'last_name' => [
+        'label'  => 'Last name',
+        'rules'  => ['trim', 'required', 'min_length[2]', 'max_length[50]', "regex_match[$nameRegex]"],
+        'errors' => ['regex_match' => 'Last name may only contain letters, spaces, hyphens and apostrophes, with no duplicate separators.'],
+      ],
+      'email' => [
+        'label'  => 'Email address',
+        'rules'  => ['trim', 'required', 'max_length[254]', "regex_match[$emailRegex]", 'valid_email', 'is_unique[users.email]'],
+        'errors' => [
+          'regex_match' => 'Please enter a valid email address using the format name@example.com.',
+          'is_unique'   => 'This email address is already registered.',
+        ],
+      ],
+      'password' => [
+        'label'  => 'Password',
+        'rules'  => [
+          'required',
+          'min_length[8]',
+          'max_length[64]',
+          "regex_match[$passwordRegex]",
+        ],
+        'errors' => ['regex_match' => 'Password must be 8-64 characters, contain a lowercase letter, an uppercase letter, a number, a special character, and no spaces.'],
+      ],
+      'password_confirm' => [
+        'label'  => 'Repeat password',
+        'rules'  => ['required', 'matches[password]'],
+        'errors' => ['matches' => 'Passwords do not match.'],
+      ],
     ];
 
     if (!$this->validate($rules)) {
-      return redirect()->to('/register')->withInput()->with('errors', $this->validator->getErrors());
+      $errors = $this->validator->getErrors();
+
+      return redirect()->to('/register')->withInput()
+        ->with('errors', $errors)
+        ->with('error', implode(' ', array_values($errors)));
+    }
+
+    $firstName = trim((string) $this->request->getPost('first_name'));
+    $lastName  = trim((string) $this->request->getPost('last_name'));
+    $email     = strtolower(trim((string) $this->request->getPost('email')));
+    $password  = (string) $this->request->getPost('password');
+
+    // Password must not contain the person's name
+    $lower = strtolower($password);
+    foreach ([$firstName, $lastName] as $part) {
+      if (strlen($part) >= 3 && str_contains($lower, strtolower($part))) {
+        $error = 'Password must not contain your first or last name.';
+
+        return redirect()->to('/register')->withInput()
+          ->with('errors', ['password' => $error])
+          ->with('error', $error);
+      }
     }
 
     $model = new UserModel();
-    $firstName = (string) $this->request->getPost('first_name');
-    $lastName = (string) $this->request->getPost('last_name');
-    $email = trim((string) $this->request->getPost('email'));
 
     $userId = $model->insert([
       'name'        => $firstName . ' ' . $lastName,
       'email'       => $email,
-      'password'    => password_hash((string) $this->request->getPost('password'), PASSWORD_DEFAULT),
+      'password'    => password_hash($password, PASSWORD_DEFAULT),
       'is_verified' => 0,
       'role'        => 'user',
     ]);
@@ -127,7 +209,7 @@ class AuthController extends BaseController
     return redirect()->to('/verify')->with('success', 'Account created. Check your email for the verification code.');
   }
 
-  private function sendOtpToUser($userId, string $email): void
+  private function sendOtpToUser($userId, string $email): bool
   {
     $otpModel = new OtpModel();
     $code = (string) random_int(100000, 999999);
@@ -143,14 +225,21 @@ class AuthController extends BaseController
     $emailService->setTo($email);
     $emailService->setSubject('Your SpendTrack verification code');
     $emailService->setMessage("Your verification code is: {$code}\n\nThis code expires in 5 minutes.");
-    $emailService->send();
+
+    if (!$emailService->send()) {
+      log_message('error', 'Unable to send verification email for user ID ' . $userId . '.');
+
+      return false;
+    }
+
+    return true;
   }
 
   public function verifyOtp()
   {
     $userId = session()->get('pending_user_id');
     $authStage = session()->get('pending_auth_stage');
-    if (!in_array($authStage, ['otp', 'pin_reset_otp'], true)) {
+    if (!in_array($authStage, ['otp', 'pin_reset_otp', 'password_reset_otp'], true)) {
       return redirect()->to('/login');
     }
 
@@ -178,12 +267,19 @@ class AuthController extends BaseController
       return redirect()->to('/verify')->with('error', 'Code expired. Please request a new one.');
     }
 
+    $otpModel->delete($latestOtp['id']);
+
+    if ($authStage === 'password_reset_otp') {
+      session()->set('pending_auth_stage', 'password_reset');
+
+      return redirect()->to('/password/reset');
+    }
+
     $userModel = new UserModel();
     $userModel->update($userId, [
       'is_verified'     => 1,
       'otp_verified_at' => date('Y-m-d H:i:s'),
     ]);
-    $otpModel->delete($latestOtp['id']);
 
     $user = $userModel->find($userId);
 
@@ -204,6 +300,68 @@ class AuthController extends BaseController
     session()->set('pending_auth_stage', 'pin');
 
     return redirect()->to('/pin/verify');
+  }
+
+  public function passwordResetShow()
+  {
+    if (!session()->get('pending_user_id') || session()->get('pending_auth_stage') !== 'password_reset') {
+      return redirect()->to('/forgot-password');
+    }
+
+    return view('auth/password-reset');
+  }
+
+  public function passwordReset()
+  {
+    $userId = session()->get('pending_user_id');
+    if (!$userId || session()->get('pending_auth_stage') !== 'password_reset') {
+      return redirect()->to('/forgot-password');
+    }
+
+    if (!$this->validate([
+      'password' => [
+        'label'  => 'Password',
+        'rules'  => [
+          'required',
+          'min_length[8]',
+          'max_length[64]',
+          'regex_match[/^\S+$/]',
+          'regex_match[/[a-z]/]',
+          'regex_match[/[A-Z]/]',
+          'regex_match[/\d/]',
+          'regex_match[/[^A-Za-z0-9]/]',
+        ],
+        'errors' => ['regex_match' => 'Password needs a lowercase letter, an uppercase letter, a number, a special character, and no spaces.'],
+      ],
+      'password_confirmation' => [
+        'label'  => 'Confirm password',
+        'rules'  => ['required', 'matches[password]'],
+        'errors' => ['matches' => 'Passwords do not match.'],
+      ],
+    ])) {
+      return redirect()->back()->withInput()
+        ->with('errors', $this->validator->getErrors());
+    }
+
+    $newPassword = (string) $this->request->getPost('password');
+
+    $updated = (new UserModel())->update($userId, [
+      'password' => password_hash($newPassword, PASSWORD_DEFAULT),
+    ]);
+
+    if (!$updated) {
+      log_message('error', 'Unable to update password for user ID ' . $userId . '.');
+
+      return redirect()->back()->withInput()
+        ->with('error', 'We could not update your password. Please try again.');
+    }
+
+    session()->remove('pending_user_id');
+    session()->remove('pending_auth_stage');
+    session()->remove('pending_reset_email');
+    session()->remove('pin_setup_allowed');
+
+    return redirect()->to('/login')->with('success', 'Your password has been reset. You can now sign in.');
   }
 
   public function pinSetupShow()
@@ -336,7 +494,13 @@ class AuthController extends BaseController
       'pin' => password_hash($pin, PASSWORD_DEFAULT),
     ]);
 
-    return $this->completeLogin($user);
+    // Clear the temporary reset session values
+    session()->remove('pending_user_id');
+    session()->remove('pending_auth_stage');
+    session()->remove('pin_setup_allowed');
+    session()->remove('pending_reset_email');
+
+    return redirect()->to('/login')->with('success', 'PIN updated. Please log in with your password.');
   }
 
   private function completeLogin(array $user)
@@ -382,7 +546,7 @@ class AuthController extends BaseController
   {
     $userId = session()->get('pending_user_id');
     $authStage = session()->get('pending_auth_stage');
-    if (!in_array($authStage, ['otp', 'pin_reset_otp'], true)) {
+    if (!in_array($authStage, ['otp', 'pin_reset_otp', 'password_reset_otp'], true)) {
       return redirect()->to('/login');
     }
 
@@ -404,7 +568,7 @@ class AuthController extends BaseController
   {
     $userId = session()->get('pending_user_id');
     $authStage = session()->get('pending_auth_stage');
-    if (!in_array($authStage, ['otp', 'pin_reset_otp'], true)) {
+    if (!in_array($authStage, ['otp', 'pin_reset_otp', 'password_reset_otp'], true)) {
       return redirect()->to('/login');
     }
 
@@ -421,7 +585,9 @@ class AuthController extends BaseController
     $userModel = new UserModel();
     $user = $userModel->find($userId);
 
-    $this->sendOtpToUser($user['id'], $user['email']);
+    if (!$this->sendOtpToUser($user['id'], $user['email'])) {
+      return redirect()->to('/verify')->with('error', 'We could not send a new code. Check your email configuration and try again.');
+    }
 
     return redirect()->to('/verify')->with('success', 'A new code has been sent to your email.');
   }

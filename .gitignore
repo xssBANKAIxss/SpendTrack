@@ -18,3 +18,4 @@ writable/uploads/*
 # Ignore dependencies
 vendor/
 node_modules/
+build/

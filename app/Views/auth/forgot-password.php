@@ -39,18 +39,25 @@
                 <div class="p-5">
                   <div class="text-center">
                     <h1 class="h4 text-gray-900 mb-2"><b>Forgot Your Password?</b></h1>
-                    <p class="mb-4">We get it, stuff happens. Just enter your email address below
-                      and we'll send you a link to reset your password!</p>
+                    <p class="mb-4">Enter your email address and we'll send you a 6-digit code to reset your password.</p>
                   </div>
-                  <form class="user">
+                  <?php if (session()->getFlashdata('error')): ?>
+                    <div class="alert alert-danger"><?= session()->getFlashdata('error') ?></div>
+                  <?php endif; ?>
+
+                  <?php if (session()->getFlashdata('success')): ?>
+                    <div class="alert alert-success"><?= session()->getFlashdata('success') ?></div>
+                  <?php endif; ?>
+                  <form class="user" action="<?= base_url('forgot-password') ?>" method="post">
+                    <?= csrf_field() ?>
                     <div class="form-group">
-                      <input type="email" class="form-control form-control-user"
+                      <input type="email" name="email" class="form-control form-control-user"
                         id="exampleInputEmail" aria-describedby="emailHelp"
-                        placeholder="Enter Email Address...">
+                        placeholder="Enter Email Address..." required>
                     </div>
-                    <a href="login.html" class="btn btn-primary btn-user btn-block">
+                    <button type="submit" class="btn btn-primary btn-user btn-block">
                       Reset Password
-                    </a>
+                    </button>
                   </form>
                   <hr>
                   <div class="text-center">

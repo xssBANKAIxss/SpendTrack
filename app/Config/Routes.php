@@ -29,6 +29,9 @@ $routes->get('auth/google/callback', 'AuthController::googleCallback');
 $routes->get('test', 'AuthController::index');
 // Auth - show the forgot password page
 $routes->get('forgot-password', 'AuthController::forgotPassword');
+$routes->post('forgot-password', 'AuthController::forgotPasswordProcess');
+$routes->get('password/reset', 'AuthController::passwordResetShow');
+$routes->post('password/reset', 'AuthController::passwordReset');
 // PIN recovery - verify the account email before a new PIN is created
 $routes->get('forgot-pin', 'AuthController::forgotPin');
 $routes->post('forgot-pin', 'AuthController::forgotPinProcess');

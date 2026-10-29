@@ -46,7 +46,11 @@
                       name="first_name"
                       class="form-control form-control-user"
                       id="exampleFirstName"
-                      placeholder="First Name">
+                      placeholder="First Name"
+                      maxlength="50"
+                      pattern="[A-Za-zÀ-ÖØ-öø-ÿ]+(?:[ '-][A-Za-zÀ-ÖØ-öø-ÿ]+)*"
+                      title="Use letters only, with optional spaces, hyphens, or apostrophes between names."
+                      required>
 
                   </div>
 
@@ -56,7 +60,11 @@
                       name="last_name"
                       class="form-control form-control-user"
                       id="exampleLastName"
-                      placeholder="Last Name">
+                      placeholder="Last Name"
+                      maxlength="50"
+                      pattern="[A-Za-zÀ-ÖØ-öø-ÿ]+(?:[ '-][A-Za-zÀ-ÖØ-öø-ÿ]+)*"
+                      title="Use letters only, with optional spaces, hyphens, or apostrophes between names."
+                      required>
 
                   </div>
 
@@ -67,7 +75,10 @@
                     name="email"
                     class="form-control form-control-user"
                     id="exampleInputEmail"
-                    placeholder="Email Address">
+                    placeholder="Email Address"
+                    maxlength="254"
+                    autocomplete="email"
+                    required>
                 </div>
 
                 <div class="form-group row">
@@ -76,7 +87,12 @@
                       name="password"
                       class="form-control form-control-user"
                       id="exampleInputPassword"
-                      placeholder="Password">
+                      placeholder="Password"
+                      minlength="8"
+                      maxlength="64"
+                      pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])\S{8,64}"
+                      title="Use 8-64 characters, including uppercase, lowercase, a number, and a special character; no spaces."
+                      required>
                   </div>
 
                   <div class="col-sm-6">
@@ -84,7 +100,10 @@
                       name="password_confirm"
                       class="form-control form-control-user"
                       id="exampleRepeatPassword"
-                      placeholder="Repeat Password">
+                      placeholder="Repeat Password"
+                      minlength="8"
+                      maxlength="64"
+                      required>
                   </div>
                 </div>
 
@@ -122,6 +141,8 @@
 
   <!-- Custom scripts for all pages-->
   <script src="<?= base_url('assets/js/sb-admin-2.min.js') ?>"></script>
+
+  <?= $this->include('layouts/modal') ?>
 
 </body>
 

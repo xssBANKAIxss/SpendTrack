@@ -76,7 +76,7 @@
         </button>
       </div>
       <div class="modal-body">
-        <?= session()->getFlashdata('error') ?>
+        <?= esc(session()->getFlashdata('error')) ?>
       </div>
       <div class="modal-footer">
         <button class="btn btn-danger" type="button" data-dismiss="modal">Try Again</button>
