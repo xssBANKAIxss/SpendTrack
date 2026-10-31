@@ -17,11 +17,14 @@ class DashboardController extends BaseController
       ->first();
 
     // This Month
+    $monthStart = date('Y-m-01');
+    $nextMonthStart = date('Y-m-d', strtotime('first day of next month'));
+
     $thisMonth = (new ExpenseModel())
       ->selectSum('amount')
       ->where('user_id', $userId)
-      ->where('MONTH(expense_date)', date('m'))
-      ->where('YEAR(expense_date)', date('Y'))
+      ->where('expense_date >=', $monthStart)
+      ->where('expense_date <', $nextMonthStart)
       ->first();
 
     // Top Category
@@ -40,12 +43,18 @@ class DashboardController extends BaseController
     // ---- CHART DATA ----
 
     // Monthly Expenses (Area Chart)
+    $database = db_connect();
+    $monthExpression = $database->DBDriver === 'SQLite3'
+      ? "CAST(strftime('%m', expense_date) AS INTEGER)"
+      : 'MONTH(expense_date)';
+
     $monthlyExpenses = (new ExpenseModel())
-      ->select('MONTH(expense_date) as month, SUM(amount) as total')
+      ->select($monthExpression . ' as month, SUM(amount) as total')
       ->where('user_id', $userId)
-      ->where('YEAR(expense_date)', date('Y'))
-      ->groupBy('MONTH(expense_date)')
-      ->orderBy('MONTH(expense_date)', 'ASC')
+      ->where('expense_date >=', date('Y-01-01'))
+      ->where('expense_date <', date('Y-01-01', strtotime('+1 year')))
+      ->groupBy($monthExpression, false)
+      ->orderBy($monthExpression, 'ASC', false)
       ->findAll();
 
     // Fill all 12 months with 0 (so missing months show as 0)

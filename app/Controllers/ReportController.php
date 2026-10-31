@@ -18,11 +18,14 @@ class ReportController extends BaseController
       ->first();
 
     // This Month
+    $monthStart = date('Y-m-01');
+    $nextMonthStart = date('Y-m-d', strtotime('first day of next month'));
+
     $thisMonth = $model
       ->selectSum('amount')
       ->where('user_id', $userId)
-      ->where('MONTH(expense_date)', date('m'))
-      ->where('YEAR(expense_date)', date('Y'))
+      ->where('expense_date >=', $monthStart)
+      ->where('expense_date <', $nextMonthStart)
       ->first();
 
     // Top Category

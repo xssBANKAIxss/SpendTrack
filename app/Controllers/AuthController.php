@@ -100,7 +100,13 @@ class AuthController extends BaseController
     session()->set('pending_user_id', $user['id']);
 
     if ($this->otpIsRequired($user)) {
-      $this->sendOtpToUser($user['id'], $user['email']);
+      if (!$this->sendOtpToUser($user['id'], $user['email'])) {
+        session()->remove('pending_user_id');
+
+        return redirect()->to('/login')
+          ->with('error', 'We could not send the verification code. Please try again in a moment.');
+      }
+
       session()->set('pending_auth_stage', 'otp');
 
       return redirect()->to('/verify')->with('success', 'A verification code has been sent to your email.');

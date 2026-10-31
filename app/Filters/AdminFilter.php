@@ -2,6 +2,7 @@
 
 namespace App\Filters;
 
+use App\Models\UserModel;
 use CodeIgniter\Filters\FilterInterface;
 use CodeIgniter\HTTP\RequestInterface;
 use CodeIgniter\HTTP\ResponseInterface;
@@ -10,11 +11,19 @@ class AdminFilter implements FilterInterface
 {
   public function before(RequestInterface $request, $arguments = null)
   {
-    if (!session()->get('user_id')) {
+    $userId = session()->get('user_id');
+
+    if (!$userId) {
       return redirect()->to('/login');
     }
 
-    if (session()->get('role') !== 'admin') {
+    // Check the CURRENT role in the database, not the old one saved in the session
+    $user = (new UserModel())->find($userId);
+
+    if (!$user || $user['role'] !== 'admin') {
+      // Keep the session in sync so the old role doesn't linger
+      session()->set('role', $user['role'] ?? 'user');
+
       return redirect()->to('/index')->with('error', 'Administrator access is required.');
     }
   }

@@ -6,8 +6,8 @@ use CodeIgniter\Router\RouteCollection;
  * @var RouteCollection $routes
  */
 
-// Home - displays the main landing page
-$routes->get('/', 'Home::index');
+// Home - show the login page directly
+$routes->get('/', 'AuthController::login');
 
 // Auth - show the login form
 $routes->get('login', 'AuthController::login');
