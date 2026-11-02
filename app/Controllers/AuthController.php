@@ -208,9 +208,14 @@ class AuthController extends BaseController
       'role'        => 'user',
     ]);
 
-    $this->sendOtpToUser($userId, $email);
+    $emailSent = $this->sendOtpToUser($userId, $email);
     session()->set('pending_user_id', $userId);
     session()->set('pending_auth_stage', 'otp');
+
+    if (!$emailSent) {
+      return redirect()->to('/verify')
+        ->with('error', 'Your account was created, but we could not send the verification code. Please use the resend option.');
+    }
 
     return redirect()->to('/verify')->with('success', 'Account created. Check your email for the verification code.');
   }
