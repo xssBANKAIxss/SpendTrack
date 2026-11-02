@@ -18,7 +18,7 @@
       <div class="card shadow mb-4">
         <div class="card-header py-3">
           <h6 class="m-0 font-weight-bold text-primary">
-            <i class="fas fa-coins mr-2"></i>Latest Expense
+            <i class="fas fa-coins mr-2"></i>Most Recently Added Expense
           </h6>
         </div>
         <div class="card-body">

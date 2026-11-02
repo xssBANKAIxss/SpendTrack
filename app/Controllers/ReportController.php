@@ -44,7 +44,8 @@ class ReportController extends BaseController
     // Latest Expenses (Table)
     $latestExpenses = $model
       ->where('user_id', $userId)
-      ->orderBy('expense_date', 'DESC')
+      ->orderBy('created_at', 'DESC')
+      ->orderBy('id', 'DESC')
       ->limit(1)
       ->findAll();
 

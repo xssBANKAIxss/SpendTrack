@@ -141,6 +141,30 @@ final class SpendTrackFeatureTest extends CIUnitTestCase
         $dashboardResponse->assertDontSee('500.00');
     }
 
+    public function testReportShowsMostRecentlyAddedExpenseRatherThanLatestExpenseDate(): void
+    {
+        $userId = $this->createUser('report-order@example.com');
+        $olderExpenseId = $this->createExpense($userId, 'Entered first', 25.00, 'Food');
+        $newerExpenseId = $this->createExpense($userId, 'Entered last', 50.00, 'Food');
+
+        $this->db->table('expenses')->where('id', $olderExpenseId)->update([
+            'expense_date' => '2026-11-02',
+            'created_at' => '2026-11-03 10:00:00',
+        ]);
+        $this->db->table('expenses')->where('id', $newerExpenseId)->update([
+            'expense_date' => '2026-10-01',
+            'created_at' => '2026-11-03 10:00:01',
+        ]);
+
+        $response = $this->withSession(['user_id' => $userId, 'role' => 'user'])
+            ->get('/reports/index');
+
+        $response->assertOK();
+        $response->assertSee('Most Recently Added Expense');
+        $response->assertSee('Entered last');
+        $response->assertDontSee('Entered first');
+    }
+
     private function createUser(string $email, string $role = 'user'): int
     {
         $this->db->table('users')->insert([
