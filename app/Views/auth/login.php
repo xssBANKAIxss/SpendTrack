@@ -49,7 +49,8 @@
                         name="email"
                         class="form-control form-control-user"
                         id="exampleInputEmail"
-                        placeholder="Enter Email Address...">
+                        placeholder="Enter Email Address..."
+                        autocomplete="email">
                     </div>
 
                     <div class="form-group">
@@ -57,7 +58,8 @@
                         name="password"
                         class="form-control form-control-user"
                         id="exampleInputPassword"
-                        placeholder="Password">
+                        placeholder="Password"
+                        autocomplete="current-password">
                     </div>
 
                     <div class="form-group">

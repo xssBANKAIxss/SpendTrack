@@ -25,6 +25,8 @@ class UserModel extends Model
 
   public function getUserByEmail($email)
   {
-    return $this->where('email', $email)->first();
+    // Email addresses are case-insensitive. Normalising here keeps lookups
+    // reliable when a user changes browser/account login details.
+    return $this->where('LOWER(email)', strtolower(trim((string) $email)))->first();
   }
 }
