@@ -25,8 +25,6 @@ $routes->get('auth/google', 'AuthController::googleRedirect');
 // Google OAuth - Google sends the user back here after they approve
 $routes->get('auth/google/callback', 'AuthController::googleCallback');
 
-// Auth - test route for checking controller
-$routes->get('test', 'AuthController::index');
 // Auth - show the forgot password page
 $routes->get('forgot-password', 'AuthController::forgotPassword');
 $routes->post('forgot-password', 'AuthController::forgotPasswordProcess');
